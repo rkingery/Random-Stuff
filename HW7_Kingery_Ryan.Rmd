@@ -1,0 +1,72 @@
+---
+title: "Homework 7"
+author: "Ryan Kingery"
+date: "10/25/2017"
+output:
+  html_document: default
+  pdf_document: default
+header-includes:
+- \usepackage{amsmath}
+- \usepackage{amsfonts}
+- \usepackage{amssymb}
+- \usepackage{tikz}
+- \usepackage{amsthm}
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+\section{Problem 2}
+The following code reproduces the non-parallel methods used last time. Note among other things that this code actually works correctly, unlike my attempts with the parallel methods shown later on.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, tidy=TRUE, tidy.opts=list(comment=FALSE)}
+set.seed(12345)
+y <- seq(from=1, to=100, length.out = 1e8) + rnorm(1e8)
+ybar <- mean(y)
+
+system.time({
+  sse_loop <- 0
+  for (i in 1:length(y)) {
+    sse_loop <- sse_loop + (y[i]-ybar)^2
+  }
+})
+
+system.time({
+  sse_vect <- sum((y-ybar)^2)
+})
+```
+
+My attempts at using the parallel methods are shown below. The first attempt uses the foreach function, and on my computer generates a process that won't halt. The second attempt uses the parSapply function, which halts quickly but doesn't seem to return the right value, or even the right format.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, tidy=TRUE, tidy.opts=list(comment=FALSE)}
+sse_loop <- 0
+update_sse <- function(yi) {sse_loop <- sse_loop + (yi-ybar)^2}
+cl <- makeCluster(detectCores()-1,type="FORK")
+clusterExport(cl,"sse_loop")
+clusterExport(cl,"ybar")
+system.time({
+  foreach(i=1:length(y),.combine=data.frame) %dopar%
+    update_sse(yi)
+})
+stopCluster(cl)
+
+sse_loop <- 0
+cl <- makeCluster(detectCores()-1,type="FORK")
+clusterExport(cl,"sse_loop")
+clusterExport(cl,"ybar")
+system.time({
+  parSapply(cl,as.data.frame(y),function(x) {sse_loop <- sse_loop + x; sse_loop})
+})
+stopCluster(cl)
+```
+
+All in all, there's nothing I can really say about the parallel methods because they're not working, and the times they generate aren't worth mentioning either. On to problem 3!
+
+\section{Problem 3}
+
+
+\section{Problem 4}
+
+
+
